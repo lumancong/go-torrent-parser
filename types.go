@@ -1,63 +1,55 @@
 package gotorrentparser
 
-import (
-	"time"
+import "github.com/zeebo/bencode"
 
-	"github.com/zeebo/bencode"
-)
+type Dictionary struct {
+	Path []string `bencode:"path"`
 
-type FileMetadata struct {
-	Path   []string `bencode:"path"`
-	PathUtf8   []string `bencode:"path.utf-8"`
-	Length int64    `bencode:"length"`
+	PathUtf8 []string `bencode:"path.utf-8"`
+
+	Length int64 `bencode:"length"`
 }
 
-type InfoMetadata struct {
-	PieceLength int64  `bencode:"piece length"`
-	Pieces      []byte `bencode:"pieces"`
+type Info struct {
+	// In the single file case, the name key is the name of a file, in the muliple file case, it's the name of a directory.
+	Name string `bencode:"name"`
+
+	NameUtf8 string `bencode:"name.utf-8"`
+
+	PieceLength int64 `bencode:"piece length"`
+
+	Pieces []byte `bencode:"pieces"`
+
+	// There is also a key length or a key files, but not both or neither. If length is present then the download represents a single file, otherwise it represents a set of files which go in a directory structure.
 
 	// single file context
-	Name   string `bencode:"name"`
-	NameUtf8   string `bencode:"name.utf-8"`
-	Length int64  `bencode:"length"`
+	Length int64 `bencode:"length"`
 
-	// multi file context
-	Files bencode.RawMessage `bencode:"files"`
+	// multi file context. type Dictionary struct
+	Files []Dictionary `bencode:"files"`
 }
 
-type Metadata struct {
-	// Foobar   []interface{} `bencode:"announce-list"`
-	Announce     string             `bencode:"announce"`
-	AnnounceList [][]string         `bencode:"announce-list"`
-	Comment      string             `bencode:"comment"`
-	CreatedBy    string             `bencode:"created by"`
-	CreatedAt    int64              `bencode:"creation date"`
-	Info         bencode.RawMessage `bencode:"info"`
-}
+// Known as .torrent file.
+// Data structure:
+// https://fileformats.fandom.com/wiki/Torrent_file.
+// http://bittorrent.org/beps/bep_0003.html
+// Announce List: http://bittorrent.org/beps/bep_0012.html
+type MetaInfo struct {
+	// required
+	Announce string `bencode:"announce"`
 
-type File struct {
-	// Relative path of the file
-	Path []string
+	// extension
+	AnnounceList [][]string `bencode:"announce-list"`
 
-	// File length
-	Length int64
-}
+	// optional
+	Comment string `bencode:"comment"`
 
-type Torrent struct {
-	// Announce URL
-	Announce []string
+	// optional
+	CreatedBy string `bencode:"created by"`
 
-	// Torrent comment
-	Comment string
+	// optional
+	CreatedAt int64 `bencode:"creation date"`
 
-	// Author
-	CreatedBy string
-
-	// Creation time
-	CreatedAt time.Time
-
-	// Torrent SHA1
-	InfoHash string
-
-	Files []*File
+	// required. type Info struct
+	RawInfo bencode.RawMessage `bencode:"info"`
 }
